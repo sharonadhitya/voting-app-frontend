@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPoll } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -10,6 +10,13 @@ const CreatePoll = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const { user } = useAuth();
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!user) {
+      navigate('/login', { state: { from: '/create' } });
+    }
+  }, [user, navigate]);
 
   const addOption = () => {
     setOptions([...options, '']);
@@ -60,16 +67,15 @@ const CreatePoll = () => {
     }
   };
 
+  // If not authenticated, don't render the form
+  if (!user) {
+    return null;
+  }
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-3xl">
       <div className="bg-white p-6 rounded-lg shadow-md">
         <h1 className="text-2xl font-bold mb-6">Create New Poll</h1>
-        
-        {!user && (
-          <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded mb-4">
-            You're creating a poll as an anonymous user. Login to track your polls.
-          </div>
-        )}
         
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">

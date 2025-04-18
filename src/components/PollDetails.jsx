@@ -17,40 +17,29 @@ const PollDetails = () => {
   
   // Check if user has voted
   useEffect(() => {
-    if (!poll || !poll.options) return;
+    if (!poll || !poll.options || !user) return;
     
-    // First check if the logged-in user has voted
-    if (user) {
-      const userVote = poll.options.find(option => 
-        option.voters && option.voters.some(voter => voter.id === user.id)
-      );
-      
-      if (userVote) {
-        setHasVoted(true);
-        setSelectedOption(userVote.id);
-        return;
-      }
-    }
+    // Check if the logged-in user has voted
+    const userVote = poll.options.find(option => 
+      option.voters && option.voters.some(voter => voter.id === user.id)
+    );
     
-    // Fallback to sessionStorage for anonymous users
-    const votedPolls = JSON.parse(sessionStorage.getItem('votedPolls') || '{}');
-    if (votedPolls[pollId]) {
+    if (userVote) {
       setHasVoted(true);
-      setSelectedOption(votedPolls[pollId]);
+      setSelectedOption(userVote.id);
     }
   }, [poll, pollId, user]);
   
   const handleVote = async (optionId) => {
+    // Redirect to login if not authenticated
+    if (!user) {
+      navigate('/login', { state: { from: `/poll/${pollId}` } });
+      return;
+    }
+    
     try {
       setVoteError(null);
       await votePoll(pollId, optionId);
-      
-      // Save vote in session storage for non-logged in users
-      if (!user) {
-        const votedPolls = JSON.parse(sessionStorage.getItem('votedPolls') || '{}');
-        votedPolls[pollId] = optionId;
-        sessionStorage.setItem('votedPolls', JSON.stringify(votedPolls));
-      }
       
       setSelectedOption(optionId);
       setHasVoted(true);
@@ -116,6 +105,12 @@ const PollDetails = () => {
           )}
         </div>
         
+        {!user && (
+          <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded mb-4">
+            You need to <a href="/login" className="underline font-medium">login</a> to vote on this poll.
+          </div>
+        )}
+        
         {voteError && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
             {voteError}
@@ -129,7 +124,7 @@ const PollDetails = () => {
               key={option.id}
               option={option}
               onVote={handleVote}
-              hasVoted={hasVoted}
+              hasVoted={hasVoted || !user}
               selectedOption={selectedOption}
               showVoters={true}
             />
@@ -152,11 +147,9 @@ const PollDetails = () => {
         </div>
       </div>
       
-      {hasVoted && (
-        <div className="mt-6 bg-white p-6 rounded-lg shadow-md">
-          <PollResults pollId={pollId} initialOptions={poll.options} />
-        </div>
-      )}
+      <div className="mt-6 bg-white p-6 rounded-lg shadow-md">
+        <PollResults pollId={pollId} initialOptions={poll.options} />
+      </div>
     </div>
   );
 };

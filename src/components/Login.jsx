@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 const Login = () => {
@@ -10,7 +10,11 @@ const Login = () => {
   
   const { login, error } = useAuth();
   const navigate = useNavigate();
-
+  const location = useLocation();
+  
+  // Get the previous path to redirect back after login
+  const from = location.state?.from || '/';
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -23,7 +27,7 @@ const Login = () => {
       setIsLoading(true);
       setFormError('');
       await login(email, password);
-      navigate('/');
+      navigate(from);
     } catch (err) {
       setFormError(err.message);
     } finally {

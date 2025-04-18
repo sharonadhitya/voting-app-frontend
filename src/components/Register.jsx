@@ -13,35 +13,37 @@ const Register = () => {
   const { register, error } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!name || !email || !password || !confirmPassword) {
-      setFormError('Please fill in all fields');
-      return;
-    }
-    
-    if (password !== confirmPassword) {
-      setFormError('Passwords do not match');
-      return;
-    }
-    
-    if (password.length < 6) {
-      setFormError('Password must be at least 6 characters long');
-      return;
-    }
-    
-    try {
-      setIsLoading(true);
-      setFormError('');
-      await register(name, email, password);
-      navigate('/');
-    } catch (err) {
-      setFormError(err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // In Register.jsx, update the handleSubmit function
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  
+  if (!name || !email || !password || !confirmPassword) {
+    setFormError('Please fill in all fields');
+    return;
+  }
+  
+  if (password !== confirmPassword) {
+    setFormError('Passwords do not match');
+    return;
+  }
+  
+  if (password.length < 6) {
+    setFormError('Password must be at least 6 characters long');
+    return;
+  }
+  
+  try {
+    setIsLoading(true);
+    setFormError('');
+    await register(name, email, password);
+    // Redirect to home page after successful registration
+    navigate('/');
+  } catch (err) {
+    setFormError(err.message);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
