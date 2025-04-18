@@ -71,14 +71,13 @@ export const connectToResults = (pollId, callback) => {
   ws.onmessage = (event) => {
     const data = JSON.parse(event.data);
     if (data.pollOptionId) {
+      // Real-time vote update
       callback(data);
     } else if (data.poll) {
-      // Handle initial poll data
-      const options = data.poll.options.map(opt => ({
-        ...opt,
-        score: opt.score || 0
-      }));
-      callback({ options });
+      // Handle initial poll data with voters
+      callback({
+        poll: data.poll
+      });
     }
   };
   
