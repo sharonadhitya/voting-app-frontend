@@ -11,7 +11,6 @@ const CreatePoll = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  // Redirect to login if not authenticated
   useEffect(() => {
     if (!user) {
       navigate('/login', { state: { from: '/create' } });
@@ -41,7 +40,6 @@ const CreatePoll = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Validate input
     if (!title.trim()) {
       setError('Please enter a poll title');
       return;
@@ -67,7 +65,6 @@ const CreatePoll = () => {
     }
   };
 
-  // If not authenticated, don't render the form
   if (!user) {
     return null;
   }
