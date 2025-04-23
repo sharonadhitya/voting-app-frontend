@@ -33,24 +33,23 @@ export const usePoll = (pollId) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const getPoll = async () => {
-      if (!pollId) return;
-      
+    const loadPoll = async () => {
       try {
         setLoading(true);
         const data = await fetchPoll(pollId);
         setPoll(data);
         setError(null);
       } catch (err) {
-        setError('Failed to fetch poll details');
-        console.error(err);
+        setError(err.response?.data?.message || 'Failed to load poll');
+        setPoll(null);
       } finally {
         setLoading(false);
       }
     };
-
-    getPoll();
+    if (pollId) {
+      loadPoll();
+    }
   }, [pollId]);
 
-  return { poll, loading, error, refreshPoll: () => fetchPoll(pollId).then(setPoll) };
+  return { poll, loading, error };
 };

@@ -1,12 +1,12 @@
 // src/hooks/usePollResults.jsx
-import { useState, useEffect } from "react";
-import { connectToResults } from "../services/api";
+import { useState, useEffect } from 'react';
+import { connectToResults } from '../services/api';
 
 export const usePollResults = (pollId, initialOptions = []) => {
   const [options, setOptions] = useState(initialOptions);
 
   useEffect(() => {
-    console.log("Initial options updated:", initialOptions);
+    console.log('Initial options updated:', initialOptions);
     setOptions(initialOptions);
   }, [initialOptions]);
 
@@ -14,12 +14,12 @@ export const usePollResults = (pollId, initialOptions = []) => {
     if (!pollId) return;
 
     const disconnect = connectToResults(pollId, (data) => {
-      console.log("Received data:", data);
+      console.log('Received data:', data);
       if (data.poll) {
-        console.log("Updating options with poll data:", data.poll.options);
+        console.log('Updating options with poll data:', data.poll.options);
         setOptions(data.poll.options);
       } else if (data.pollOptionId) {
-        console.log("Updating option with vote data:", data);
+        console.log('Updating option with vote data:', data);
         setOptions((currentOptions) => {
           const newOptions = currentOptions.map((option) => {
             if (option.id === data.pollOptionId) {
@@ -42,7 +42,7 @@ export const usePollResults = (pollId, initialOptions = []) => {
             }
             return option;
           });
-          console.log("New options after vote update:", newOptions);
+          console.log('New options after vote update:', newOptions);
           return newOptions;
         });
       }

@@ -1,6 +1,8 @@
+// src/pages/PollDetails.jsx
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { usePoll } from '../hooks/usePolls';
+import { usePollResults } from '../hooks/usePollResults'; // Import usePollResults
 import { votePoll, deletePoll, updatePoll } from '../services/api';
 import PollOption from './PollOption';
 import PollResults from './PollResults';
@@ -9,7 +11,8 @@ import { useAuth } from '../contexts/AuthContext';
 const PollDetails = () => {
   const { pollId } = useParams();
   const navigate = useNavigate();
-  const { poll, loading, error, refreshPoll } = usePoll(pollId);
+  const { poll, loading, error } = usePoll(pollId); // No need for refreshPoll
+  const { options } = usePollResults(pollId, poll?.options || []); // Use real-time options
   const [selectedOption, setSelectedOption] = useState(null);
   const [hasVoted, setHasVoted] = useState(false);
   const [voteError, setVoteError] = useState(null);
@@ -36,9 +39,7 @@ const PollDetails = () => {
       await votePoll(pollId, optionId);
       setSelectedOption(optionId);
       setHasVoted(true);
-      setTimeout(() => {
-        refreshPoll();
-      }, 500);
+      // No need for refreshPoll; usePollResults handles updates
     } catch (err) {
       console.error('Vote error:', err);
       setVoteError('Failed to submit vote. ' + (err.response?.data?.message || 'You may have already voted on this poll.'));
@@ -59,14 +60,15 @@ const PollDetails = () => {
   const handleUpdate = async (newTitle, newOptions) => {
     try {
       await updatePoll(pollId, { title: newTitle, options: newOptions });
-      refreshPoll();
+      // Optionally refetch poll if update changes options
+      window.location.reload(); // Simple solution; consider optimizing later
     } catch (err) {
       setVoteError('Failed to update poll. ' + (err.response?.data?.message || 'Please try again.'));
     }
   };
 
   const handleRetry = () => {
-    refreshPoll();
+    window.location.reload(); // Simple retry; consider optimizing
   };
 
   if (loading) {
@@ -129,7 +131,7 @@ const PollDetails = () => {
 
         <div className="mb-6">
           <h2 className="text-xl font-semibold mb-3">Options</h2>
-          {poll.options.map(option => (
+          {options.map(option => (
             <PollOption
               key={option.id}
               option={option}
@@ -150,7 +152,10 @@ const PollDetails = () => {
               Delete Poll
             </button>
             <button
-              onClick={() => handleUpdate(prompt('New title:', poll.title), prompt('New options (comma-separated):', poll.options.map(o => o.title).join(','))?.split(',').map(o => o.trim()))}
+              onClick={() => handleUpdate(
+                prompt('New title:', poll.title),
+                prompt('New options (comma-separated):', poll.options.map(o => o.title).join(','))?.split(',').map(o => o.trim())
+              )}
               className="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 transition"
             >
               Update Poll
@@ -175,7 +180,7 @@ const PollDetails = () => {
       </div>
 
       <div className="mt-6 bg-white p-6 rounded-lg shadow-md">
-        <PollResults pollId={pollId} initialOptions={poll.options} />
+        <PollResults pollId={pollId} initialOptions={options} />
       </div>
     </div>
   );

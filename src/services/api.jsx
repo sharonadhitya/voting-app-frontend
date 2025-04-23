@@ -25,10 +25,10 @@ export const votePoll = async (pollId, pollOptionId) => {
   console.log(`Sending vote for poll ${pollId}, option ${pollOptionId}`);
   try {
     const response = await api.post(`/polls/${pollId}/votes`, { pollOptionId });
-    console.log("Vote response:", response.status, response.data);
+    console.log('Vote response:', response.status, response.data);
     return true;
   } catch (error) {
-    console.error("Error voting on poll:", error.response?.data || error.message);
+    console.error('Error voting on poll:', error.response?.data || error.message);
     throw error;
   }
 };
@@ -82,43 +82,43 @@ export const updatePoll = async (pollId, data) => {
 };
 
 export const connectToResults = (pollId, callback) => {
-  const token = localStorage.getItem("token");
-  const socket = io(API_URL, {
+  const token = localStorage.getItem('token');
+  const socket = io('http://localhost:3333', {
     withCredentials: true,
-    transports: ["websocket"],
+    transports: ['websocket'],
     auth: { token },
   });
 
-  socket.on("connect", () => {
-    console.log("Socket.IO connected:", socket.id);
-    socket.emit("joinPoll", { pollId });
+  socket.on('connect', () => {
+    console.log('Socket.IO connected:', socket.id);
+    socket.emit('joinPoll', { pollId });
   });
 
-  socket.on("pollUpdate", (data) => {
-    console.log("Received pollUpdate:", data);
+  socket.on('pollUpdate', (data) => {
+    console.log('Received pollUpdate:', data);
     callback(data);
   });
 
-  socket.on("voteUpdate", (data) => {
-    console.log("Received voteUpdate:", data);
+  socket.on('voteUpdate', (data) => {
+    console.log('Received voteUpdate:', data);
     callback(data);
   });
 
-  socket.on("error", (error) => {
-    console.error("Socket.IO error:", error);
+  socket.on('error', (error) => {
+    console.error('Socket.IO error:', error);
   });
 
-  socket.on("connect_error", (err) => {
-    console.error("Socket.IO connection error:", err.message);
+  socket.on('connect_error', (err) => {
+    console.error('Socket.IO connection error:', err.message);
   });
 
-  socket.on("disconnect", (reason) => {
-    console.log("Socket.IO disconnected:", reason);
+  socket.on('disconnect', (reason) => {
+    console.log('Socket.IO disconnected:', reason);
   });
 
   return () => {
     socket.disconnect();
-    console.log("Socket.IO disconnected");
+    console.log('Socket.IO disconnected');
   };
 };
 
