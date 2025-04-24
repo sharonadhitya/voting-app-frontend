@@ -1,18 +1,15 @@
-// src/pages/PollDetails.jsx
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { usePoll } from '../hooks/usePolls';
-import { usePollResults } from '../hooks/usePollResults'; // Import usePollResults
+import { usePollResults } from '../hooks/usePollResults';
 import { votePoll, deletePoll, updatePoll } from '../services/api';
-import PollOption from './PollOption';
-import PollResults from './PollResults';
 import { useAuth } from '../contexts/AuthContext';
 
 const PollDetails = () => {
   const { pollId } = useParams();
   const navigate = useNavigate();
-  const { poll, loading, error } = usePoll(pollId); // No need for refreshPoll
-  const { options } = usePollResults(pollId, poll?.options || []); // Use real-time options
+  const { poll, loading, error } = usePoll(pollId);
+  const { options } = usePollResults(pollId, poll?.options || []);
   const [selectedOption, setSelectedOption] = useState(null);
   const [hasVoted, setHasVoted] = useState(false);
   const [voteError, setVoteError] = useState(null);
@@ -39,7 +36,6 @@ const PollDetails = () => {
       await votePoll(pollId, optionId);
       setSelectedOption(optionId);
       setHasVoted(true);
-      // No need for refreshPoll; usePollResults handles updates
     } catch (err) {
       console.error('Vote error:', err);
       setVoteError('Failed to submit vote. ' + (err.response?.data?.message || 'You may have already voted on this poll.'));
@@ -60,15 +56,14 @@ const PollDetails = () => {
   const handleUpdate = async (newTitle, newOptions) => {
     try {
       await updatePoll(pollId, { title: newTitle, options: newOptions });
-      // Optionally refetch poll if update changes options
-      window.location.reload(); // Simple solution; consider optimizing later
+      window.location.reload();
     } catch (err) {
       setVoteError('Failed to update poll. ' + (err.response?.data?.message || 'Please try again.'));
     }
   };
 
   const handleRetry = () => {
-    window.location.reload(); // Simple retry; consider optimizing
+    window.location.reload();
   };
 
   if (loading) {
@@ -106,6 +101,8 @@ const PollDetails = () => {
     );
   }
 
+  const totalVotes = options.reduce((sum, option) => sum + (option.score || 0), 0);
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-3xl">
       <div className="bg-white p-6 rounded-lg shadow-md">
@@ -130,17 +127,57 @@ const PollDetails = () => {
         )}
 
         <div className="mb-6">
-          <h2 className="text-xl font-semibold mb-3">Options</h2>
+          <h2 className="text-xl font-semibold mb-3">{hasVoted ? 'Results' : 'Options'}</h2>
           {options.map(option => (
-            <PollOption
-              key={option.id}
-              option={option}
-              onVote={handleVote}
-              hasVoted={hasVoted || !user}
-              selectedOption={selectedOption}
-              showVoters={true}
-            />
+            <div key={option.id} className="border border-gray-200 rounded-md p-4 mb-2">
+              {!hasVoted && user ? (
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name={`poll-option-${pollId}`}
+                    value={option.id}
+                    checked={selectedOption === option.id}
+                    onChange={() => handleVote(option.id)}
+                    className="form-radio"
+                  />
+                  <span className="font-medium">{option.title}</span>
+                </label>
+              ) : (
+                <div>
+                  <div className="flex justify-between mb-1">
+                    <span className="font-medium">{option.title}</span>
+                    <span>
+                      {totalVotes > 0 ? Math.round((option.score / totalVotes) * 100) : 0}% ({option.score} vote{option.score !== 1 ? 's' : ''})
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-4">
+                    <div
+                      style={{ width: `${totalVotes > 0 ? (option.score / totalVotes) * 100 : 0}%` }}
+                      className="bg-indigo-600 h-4 rounded-full transition-all duration-500"
+                    ></div>
+                  </div>
+                  {option.voters && option.voters.length > 0 && (
+                    <div className="mt-3">
+                      <p className="text-sm text-gray-600 mb-1">Voters:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {option.voters.map((voter, idx) => (
+                          <span
+                            key={idx}
+                            className="inline-block bg-gray-100 rounded-full px-2 py-1 text-xs font-medium text-gray-700"
+                          >
+                            {voter.name}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           ))}
+          {hasVoted && (
+            <div className="mt-4 text-right text-gray-600">Total votes: {totalVotes}</div>
+          )}
         </div>
 
         {user && poll.userId === user.id && (
@@ -177,10 +214,6 @@ const PollDetails = () => {
             Share Poll
           </button>
         </div>
-      </div>
-
-      <div className="mt-6 bg-white p-6 rounded-lg shadow-md">
-        <PollResults pollId={pollId} initialOptions={options} />
       </div>
     </div>
   );

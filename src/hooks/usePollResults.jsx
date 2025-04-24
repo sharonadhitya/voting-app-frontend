@@ -1,4 +1,3 @@
-// src/hooks/usePollResults.jsx
 import { useState, useEffect } from 'react';
 import { connectToResults } from '../services/api';
 
