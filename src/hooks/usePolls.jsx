@@ -1,6 +1,6 @@
-// src/hooks/usePolls.jsx
 import { useState, useEffect } from "react";
-import { fetchPolls,fetchPoll } from "../services/api";
+import { useNavigate } from "react-router-dom";
+import { fetchPolls, fetchPoll } from "../services/api";
 import { io } from "socket.io-client";
 
 export const usePolls = () => {
@@ -50,6 +50,14 @@ export const usePolls = () => {
       });
     });
 
+    socket.on("deletePoll", ({ pollId }) => {
+      console.log("Received delete poll:", pollId);
+      setPolls((prevPolls) => {
+        // Remove the poll with the matching pollId
+        return prevPolls.filter((poll) => poll.id !== pollId);
+      });
+    });
+
     socket.on("connect_error", (err) => {
       console.error("Socket.IO connection error for polls:", err.message);
     });
@@ -72,8 +80,10 @@ export const usePoll = (pollId) => {
   const [poll, setPoll] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
+    // Fetch poll data
     const loadPoll = async () => {
       try {
         setLoading(true);
@@ -87,10 +97,45 @@ export const usePoll = (pollId) => {
         setLoading(false);
       }
     };
+
     if (pollId) {
       loadPoll();
     }
-  }, [pollId]);
+
+    // Connect to Socket.IO for real-time deletion updates
+    const token = localStorage.getItem("token");
+    const socket = io("http://localhost:3333", {
+      withCredentials: true,
+      transports: ["websocket"],
+      auth: { token },
+    });
+
+    socket.on("connect", () => {
+      console.log("Socket.IO connected for poll:", socket.id);
+    });
+
+    socket.on("deletePoll", ({ pollId: deletedPollId }) => {
+      console.log("Received delete poll for poll:", deletedPollId);
+      if (deletedPollId === pollId) {
+        console.log("Current poll deleted, redirecting to home");
+        navigate("/", { state: { message: "The poll was deleted by its owner" } });
+      }
+    });
+
+    socket.on("connect_error", (err) => {
+      console.error("Socket.IO connection error for poll:", err.message);
+    });
+
+    socket.on("disconnect", (reason) => {
+      console.log("Socket.IO disconnected for poll:", reason);
+    });
+
+    // Cleanup on unmount
+    return () => {
+      socket.disconnect();
+      console.log("Socket.IO disconnected for poll");
+    };
+  }, [pollId, navigate]);
 
   return { poll, loading, error };
 };
